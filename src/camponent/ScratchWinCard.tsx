@@ -93,11 +93,21 @@ export default function ScratchWinCard() {
 
   const handleClaim = () => {
         setClaimed(true);
+
+        if (!paymentConfigured) {
+            setMessage("Payment is not configured yet. Add a real merchant UPI ID and payment details to enable a live payment.");
+            return;
+        }
+
         if (isMobile) {
             // On Android try PhonePe intent first, fallback to generic upi://
-            window.location.href = /android/i.test(navigator.userAgent) ? phonePeIntent : upiLink;
+            const targetLink = /android/i.test(navigator.userAgent) ? phonePeIntent : upiLink;
+            window.location.href = targetLink;
+            setMessage("If the payment app did not open, install PhonePe or another UPI app and try again.");
+            return;
         }
-        // On desktop: the button in the UI shows a message explaining why
+
+        setMessage("UPI payments only work on a phone with a UPI app installed.");
     };
 
 
@@ -175,8 +185,7 @@ export default function ScratchWinCard() {
     const phonePeIntent = `intent://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
 
     const isMobile = typeof navigator !== "undefined" && /android|iphone|ipad/i.test(navigator.userAgent);
-
-  
+    const paymentConfigured = Boolean(upiId && payeeName && amount > 0);
 
     const handleReset = () => {
         setScratched(false);
@@ -388,6 +397,11 @@ export default function ScratchWinCard() {
                                 >
                                     Claim Your Prize Now
                                 </button>
+                                {message ? (
+                                    <p style={{ marginTop: 12, fontSize: 13, color: "#f59e0b", lineHeight: 1.5 }}>
+                                        {message}
+                                    </p>
+                                ) : null}
                                 <p style={{ marginTop: 12, fontSize: 13, color: "#999" }}>
                                     T&amp;C Apply | Valid for limited time only
                                 </p>
@@ -395,29 +409,43 @@ export default function ScratchWinCard() {
                         ) : (
                             <>
                                 {isMobile ? (
-                                    /* Mobile: show a direct open button in case the auto-redirect was blocked */
-                                    <>
-                                        <p style={{ fontSize: 14, color: "#555", marginBottom: 12 }}>
-                                            Opening PhonePe… If it didn&apos;t open automatically:
+                                    paymentConfigured ? (
+                                        /* Mobile: show a direct open button in case the auto-redirect was blocked */
+                                        <>
+                                            <p style={{ fontSize: 14, color: "#555", marginBottom: 12 }}>
+                                                Opening payment app… If it didn&apos;t open automatically:
+                                            </p>
+                                            <a
+                                                href={/android/i.test(navigator.userAgent) ? phonePeIntent : upiLink}
+                                                style={{
+                                                    display: "block",
+                                                    width: "100%",
+                                                    padding: "14px 20px",
+                                                    borderRadius: 14,
+                                                    background: "linear-gradient(135deg, #5f259f, #3d1a6e)",
+                                                    color: "#fff",
+                                                    fontWeight: 800,
+                                                    fontSize: 16,
+                                                    textDecoration: "none",
+                                                    boxSizing: "border-box",
+                                                }}
+                                            >
+                                                📲 Open Payment App
+                                            </a>
+                                        </>
+                                    ) : (
+                                        <p style={{
+                                            padding: "12px 14px",
+                                            background: "#fef9c3",
+                                            borderRadius: 10,
+                                            fontSize: 13,
+                                            color: "#92400e",
+                                            fontWeight: 500,
+                                            lineHeight: 1.5,
+                                        }}>
+                                            ⚠️ Live payment is not configured. Set a valid merchant UPI ID in your environment variables to enable actual payment.
                                         </p>
-                                        <a
-                                            href={/android/i.test(navigator.userAgent) ? phonePeIntent : upiLink}
-                                            style={{
-                                                display: "block",
-                                                width: "100%",
-                                                padding: "14px 20px",
-                                                borderRadius: 14,
-                                                background: "linear-gradient(135deg, #5f259f, #3d1a6e)",
-                                                color: "#fff",
-                                                fontWeight: 800,
-                                                fontSize: 16,
-                                                textDecoration: "none",
-                                                boxSizing: "border-box",
-                                            }}
-                                        >
-                                            📲 Open PhonePe Now
-                                        </a>
-                                    </>
+                                    )
                                 ) : (
                                     /* Desktop: upi:// links don't work — explain why */
                                     <p style={{
@@ -430,7 +458,7 @@ export default function ScratchWinCard() {
                                         lineHeight: 1.5,
                                     }}>
                                         ⚠️ UPI deep-links only work on mobile.
-                                        Open this page on your phone to pay via PhonePe.
+                                        Open this page on a phone with a UPI app installed to complete a payment.
                                     </p>
                                 )}
                                 <button
