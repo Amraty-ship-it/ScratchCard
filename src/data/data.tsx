@@ -1,3 +1,3 @@
-export const upiId = "amartytyagi@ybl";
+export const upiId = "6264607694";
 export const payeeName = "ABC Store";
-export const amount = 480;
+export const amount = 5;
